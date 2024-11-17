@@ -30,21 +30,22 @@ public class Saucedemo {
 	private ExtentReports extent;
 	private ExtentTest test;
 
-	String url = "https://www.saucedemo.com";
-	String UsrNm = "standard_user";
-	String InPwd = "secret_sauce1";
-	String CrtPwd = "secret_sauce";
 	By Username = By.xpath("//input[@id='user-name']");
 	By Password = By.xpath("//input[@id='password']");
 	By LoginButton = By.xpath("//input[@id='login-button']");
 	By errormsg =  By.xpath("//h3[contains(text(),'Epic sadface: Username and password do not match any user in this service')]");
 	By Productpage = By.xpath("//*[@id=\"header_container\"]/div[2]/span");
+	By inventoryitem = By.cssSelector(".inventory_item");
+	By itemprice = By.cssSelector(".inventory_item_price");
+	By inventorybtn = By.cssSelector(".btn_primary.btn_inventory");
+	By itemname = By.cssSelector(".inventory_item_name");
+	By inventorybtn2 = By.cssSelector(".btn_secondary.btn_inventory");
+	By cart = By.cssSelector(".shopping_cart_link");
 
 
 	// Step 1: Navigate to the login page and login with incorrect credentials
-
-	@Given("User navigate to SauceDemo login page")
-	public void the_user_is_on_the_login_page() throws InterruptedException {
+	@Given("User navigate to SauceDemo URL {string}")
+	public void user_navigate_to_sauce_demo_url(String string) throws InterruptedException {
 		ExtentSparkReporter reporter = new ExtentSparkReporter("target/extent-reports.html");
 		extent = new ExtentReports();
 		extent.attachReporter(reporter);
@@ -53,19 +54,19 @@ public class Saucedemo {
 		WebDriverManager.chromedriver().setup();
 		driver=new ChromeDriver();
 		driver.manage().window().maximize();
-		driver.get(url);
+		driver.get(string);
 		test.pass("Navigated to SauceDemo login page");
 		Thread.sleep(2000);
 	}
 
-	@When("User log in with incorrect credentials")
-	public void the_user_enters_incorrect_credentials() throws InterruptedException {
+	@When("User log in with incorrect username {string} and password {string}")
+	public void user_log_in_with_incorrect_username_and_password(String string, String string2) throws InterruptedException {
 		WebElement usernameField = driver.findElement(Username);
 		WebElement passwordField = driver.findElement(Password);
 		WebElement button=driver.findElement(LoginButton);
-		usernameField.sendKeys(UsrNm);
+		usernameField.sendKeys(string);
 		Thread.sleep(2000);
-		passwordField.sendKeys(InPwd);
+		passwordField.sendKeys(string2);
 		Thread.sleep(2000);
 		button.click();
 		Thread.sleep(2000);
@@ -93,15 +94,14 @@ public class Saucedemo {
 	}
 
 	// Step 2: Login with correct credentials
-
-	@When("User log in with valid credentials")
-	public void the_user_enters_correct_credentials() throws InterruptedException {
+	@When("User log in with valid username1 {string} and password1 {string}")
+	public void user_log_in_with_valid_username1_and_password1(String string, String string2) throws InterruptedException {
 		WebElement usernameField = driver.findElement(Username);
 		WebElement passwordField = driver.findElement(Password);
 		WebElement button=driver.findElement(LoginButton);
-		usernameField.sendKeys(UsrNm);
+		usernameField.sendKeys(string);
 		Thread.sleep(2000);
-		passwordField.sendKeys(CrtPwd);
+		passwordField.sendKeys(string2);
 		Thread.sleep(2000);
 		button.click();
 		Thread.sleep(2000);
@@ -117,18 +117,17 @@ public class Saucedemo {
 	}
 
 	// Step 3: Add the 4 cheapest items to the cart
-
 	@Then("Add the 4 cheapest items to the cart and the total price should be below $50")
 	public void the_user_is_logged_in() throws InterruptedException {
 		System.out.println("Add 4 cheapest items to the cart");
 		Thread.sleep(2000);
 
 		// Locate all product elements and their prices
-		List<WebElement> products = driver.findElements(By.cssSelector(".inventory_item"));
+		List<WebElement> products = driver.findElements(inventoryitem);
 		Map<WebElement, Double> productPriceMap = new HashMap<>();
 
 		for (WebElement product : products) {
-			String priceText = product.findElement(By.cssSelector(".inventory_item_price"))
+			String priceText = product.findElement(itemprice)
 					.getText().replace("$", "").trim();
 			double price = Double.parseDouble(priceText);
 			productPriceMap.put(product, price);
@@ -145,9 +144,9 @@ public class Saucedemo {
 		double totalPrice = 0.0;
 
 		for (Map.Entry<WebElement, Double> entry : selectedProducts) {
-			entry.getKey().findElement(By.cssSelector(".btn_primary.btn_inventory")).click();
+			entry.getKey().findElement(inventorybtn).click();
 			totalPrice += entry.getValue();
-			System.out.println("Added: " + entry.getKey().findElement(By.cssSelector(".inventory_item_name")).getText() + " - Price: $" + entry.getValue());
+			System.out.println("Added: " + entry.getKey().findElement(itemname).getText() + " - Price: $" + entry.getValue());
 
 		}
 
@@ -155,17 +154,19 @@ public class Saucedemo {
 		System.out.println("Total Price After Adding: $" + totalPrice);
 		test.pass("Total Price After Adding: $" + totalPrice);
 		Thread.sleep(2000);
+
+
 		// Remove items if the total price exceeds $50
 		if (totalPrice > 50) {
 			for (int i = selectedProducts.size() - 1; i >= 0; i--) {
 				if (totalPrice <= 50) break;
 
 				WebElement productToRemove = selectedProducts.get(i).getKey();
-				productToRemove.findElement(By.cssSelector(".btn_secondary.btn_inventory")).click();
+				productToRemove.findElement(inventorybtn2).click();
 				totalPrice -= selectedProducts.get(i).getValue();
 
-				System.out.println("Removed: " + productToRemove.findElement(By.cssSelector(".inventory_item_name")).getText() + " - New Total Price: $" + totalPrice);
-				test.pass("Removed: " + productToRemove.findElement(By.cssSelector(".inventory_item_name")).getText() + " - New Total Price: $" + totalPrice);
+				System.out.println("Removed: " + productToRemove.findElement(itemname).getText() + " - New Total Price: $" + totalPrice);
+				test.pass("Removed: " + productToRemove.findElement(itemname).getText() + " - New Total Price: $" + totalPrice);
 			}
 		}
 
@@ -176,9 +177,10 @@ public class Saucedemo {
 
 	}
 
+	//Items added to the cart
 	@And("User navigate to the cart page")
 	public void cartpage() throws InterruptedException {
-		driver.findElement(By.cssSelector(".shopping_cart_link")).click();
+		driver.findElement(cart).click();
 		System.out.println("Navigated to the cart.");
 		Thread.sleep(4000);
 		extent.flush();
